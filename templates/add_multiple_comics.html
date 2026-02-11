@@ -1,0 +1,219 @@
+{% extends "base.html" %} {% block title %}Add Multiple Comics - Comic
+Collection Manager{% endblock %} {% block content %}
+<div class="card">
+  <h2>Add Multiple Comics</h2>
+  <p>
+    Fill in the details for multiple comics below. You can add as many as you
+    need - just click "Add Another Comic" to get more fields.
+  </p>
+
+  <form method="POST" id="multipleComicsForm">
+    <div id="comicsContainer">
+      <!-- Initial comic entry -->
+      <div class="comic-entry" data-index="0">
+        <h3>Comic #1</h3>
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+          "
+        >
+          <div class="form-group">
+            <label for="title_0">Title:</label>
+            <input
+              type="text"
+              id="title_0"
+              name="title_0"
+              placeholder="Enter comic title..."
+              value="{{ request.form.get('title_0', '') }}"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="volume_0">Volume:</label>
+            <input
+              type="text"
+              id="volume_0"
+              name="volume_0"
+              placeholder="Enter volume number..."
+              value="{{ request.form.get('volume_0', '') }}"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="writer_0">Writer:</label>
+            <input
+              type="text"
+              id="writer_0"
+              name="writer_0"
+              placeholder="Enter writer name..."
+              value="{{ request.form.get('writer_0', '') }}"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="artist_0">Artist:</label>
+            <input
+              type="text"
+              id="artist_0"
+              name="artist_0"
+              placeholder="Enter artist name..."
+              value="{{ request.form.get('artist_0', '') }}"
+            />
+          </div>
+        </div>
+        <hr style="margin: 1.5rem 0; border: 1px solid #ddd" />
+      </div>
+    </div>
+
+    <div style="margin: 1rem 0">
+      <button
+        type="button"
+        id="addAnotherBtn"
+        class="btn"
+        style="background: #27ae60"
+      >
+        Add Another Comic
+      </button>
+      <button
+        type="button"
+        id="removeLastBtn"
+        class="btn"
+        style="background: #e67e22"
+      >
+        Remove Last Comic
+      </button>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 2rem">
+      <button type="submit" class="btn btn-success">Add All Comics</button>
+      <a href="{{ url_for('index') }}" class="btn" style="background: #95a5a6"
+        >Cancel</a
+      >
+    </div>
+  </form>
+</div>
+
+<script>
+  let comicCount = 1;
+
+  document
+    .getElementById("addAnotherBtn")
+    .addEventListener("click", function () {
+      const container = document.getElementById("comicsContainer");
+      const newComicDiv = document.createElement("div");
+      newComicDiv.className = "comic-entry";
+      newComicDiv.setAttribute("data-index", comicCount);
+
+      newComicDiv.innerHTML = `
+        <h3>Comic #${comicCount + 1}</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div class="form-group">
+                <label for="title_${comicCount}">Title:</label>
+                <input type="text" id="title_${comicCount}" name="title_${comicCount}" 
+                       placeholder="Enter comic title...">
+            </div>
+            
+            <div class="form-group">
+                <label for="volume_${comicCount}">Volume:</label>
+                <input type="text" id="volume_${comicCount}" name="volume_${comicCount}" 
+                       placeholder="Enter volume number...">
+            </div>
+            
+            <div class="form-group">
+                <label for="writer_${comicCount}">Writer:</label>
+                <input type="text" id="writer_${comicCount}" name="writer_${comicCount}" 
+                       placeholder="Enter writer name...">
+            </div>
+            
+            <div class="form-group">
+                <label for="artist_${comicCount}">Artist:</label>
+                <input type="text" id="artist_${comicCount}" name="artist_${comicCount}" 
+                       placeholder="Enter artist name...">
+            </div>
+        </div>
+        <hr style="margin: 1.5rem 0; border: 1px solid #ddd;">
+    `;
+
+      container.appendChild(newComicDiv);
+      comicCount++;
+
+      // Focus on the first field of the new comic
+      document.getElementById(`title_${comicCount - 1}`).focus();
+
+      // Update remove button visibility
+      updateRemoveButtonVisibility();
+    });
+
+  document
+    .getElementById("removeLastBtn")
+    .addEventListener("click", function () {
+      if (comicCount > 1) {
+        const container = document.getElementById("comicsContainer");
+        const lastComic = container.querySelector(
+          `[data-index="${comicCount - 1}"]`,
+        );
+        if (lastComic) {
+          container.removeChild(lastComic);
+          comicCount--;
+        }
+      }
+      updateRemoveButtonVisibility();
+    });
+
+  function updateRemoveButtonVisibility() {
+    const removeBtn = document.getElementById("removeLastBtn");
+    if (comicCount <= 1) {
+      removeBtn.style.display = "none";
+    } else {
+      removeBtn.style.display = "inline-block";
+    }
+  }
+
+  // Initialize remove button visibility
+  updateRemoveButtonVisibility();
+
+  // Add keyboard shortcuts
+  document.addEventListener("keydown", function (e) {
+    // Ctrl/Cmd + Enter to add another comic
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      document.getElementById("addAnotherBtn").click();
+    }
+  });
+
+  // Auto-focus on first field when page loads
+  document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("title_0").focus();
+  });
+</script>
+
+<style>
+  .comic-entry {
+    margin-bottom: 1rem;
+  }
+
+  .comic-entry h3 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #3498db;
+  }
+
+  @media (max-width: 768px) {
+    .comic-entry > div {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  /* Highlight focused comic entry */
+  .comic-entry:focus-within {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+  }
+</style>
+{% endblock %}

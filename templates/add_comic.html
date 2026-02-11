@@ -1,0 +1,63 @@
+{% extends "base.html" %} {% block title %}Add Comic - Comic Collection
+Manager{% endblock %} {% block content %}
+<div class="card">
+  <h2>Add New Comic</h2>
+
+  <form method="POST">
+    <div class="form-group">
+      <label for="title">Title:</label>
+      <input
+        type="text"
+        id="title"
+        name="title"
+        required
+        placeholder="Enter comic title..."
+        value="{{ request.form.title or '' }}"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="volume">Volume:</label>
+      <input
+        type="text"
+        id="volume"
+        name="volume"
+        required
+        placeholder="Enter volume number..."
+        value="{{ request.form.volume or '' }}"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="writer">Writer:</label>
+      <input
+        type="text"
+        id="writer"
+        name="writer"
+        required
+        placeholder="Enter writer name..."
+        value="{{ request.form.writer or '' }}"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="artist">Artist:</label>
+      <input
+        type="text"
+        id="artist"
+        name="artist"
+        required
+        placeholder="Enter artist name..."
+        value="{{ request.form.artist or '' }}"
+      />
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-top: 2rem">
+      <button type="submit" class="btn btn-success">Add Comic</button>
+      <a href="{{ url_for('index') }}" class="btn" style="background: #95a5a6"
+        >Cancel</a
+      >
+    </div>
+  </form>
+</div>
+{% endblock %}
