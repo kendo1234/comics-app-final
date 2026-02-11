@@ -27,9 +27,13 @@ def add_comic():
             flash('All fields are required!', 'error')
             return render_template('add_comic.html')
         
-        comic = comic_service.add_comic(title, volume, writer, artist)
-        flash(f'Comic "{title}" added successfully!', 'success')
-        return redirect(url_for('index'))
+        try:
+            comic = comic_service.add_comic(title, volume, writer, artist)
+            flash(f'Comic "{title}" added successfully!', 'success')
+            return redirect(url_for('index'))
+        except ValueError as e:
+            flash(str(e), 'error')
+            return render_template('add_comic.html')
     
     return render_template('add_comic.html')
 
@@ -67,14 +71,18 @@ def add_multiple_comics():
             flash('Please fill in at least one complete comic entry!', 'error')
             return render_template('add_multiple_comics.html')
         
-        # Add all comics
-        added_comics = comic_service.add_multiple_comics(comics_data)
-        
-        if added_comics:
-            flash(f'Successfully added {len(added_comics)} comics!', 'success')
-            return redirect(url_for('index'))
-        else:
-            flash('No comics were added. Please check your entries.', 'error')
+        try:
+            # Add all comics
+            added_comics = comic_service.add_multiple_comics(comics_data)
+            
+            if added_comics:
+                flash(f'Successfully added {len(added_comics)} comics!', 'success')
+                return redirect(url_for('index'))
+            else:
+                flash('No comics were added. Please check your entries.', 'error')
+        except ValueError as e:
+            flash(str(e), 'error')
+            return render_template('add_multiple_comics.html')
     
     return render_template('add_multiple_comics.html')
 
@@ -96,11 +104,15 @@ def edit_comic(comic_id):
             flash('All fields are required!', 'error')
             return render_template('edit_comic.html', comic=comic)
         
-        updated_comic = comic_service.update_comic(comic_id, title, volume, writer, artist)
-        if updated_comic:
-            flash(f'Comic "{title}" updated successfully!', 'success')
-        else:
-            flash('Error updating comic!', 'error')
+        try:
+            updated_comic = comic_service.update_comic(comic_id, title, volume, writer, artist)
+            if updated_comic:
+                flash(f'Comic "{title}" updated successfully!', 'success')
+            else:
+                flash('Error updating comic!', 'error')
+        except ValueError as e:
+            flash(str(e), 'error')
+            return render_template('edit_comic.html', comic=comic)
         
         return redirect(url_for('index'))
     
@@ -129,17 +141,6 @@ def search():
         return render_template('index.html', comics=comics, search_query=query)
     else:
         return redirect(url_for('index'))
-
-@app.route('/export')
-def export_csv():
-    """Export comics to CSV"""
-    try:
-        filename = comic_service.export_to_csv()
-        flash(f'Comics exported to {filename} successfully!', 'success')
-    except Exception as e:
-        flash(f'Error exporting to CSV: {str(e)}', 'error')
-    
-    return redirect(url_for('index'))
 
 # API endpoints for potential future use
 @app.route('/api/comics')

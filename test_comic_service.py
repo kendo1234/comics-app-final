@@ -268,5 +268,132 @@ class TestComicService:
         assert len(service.comics) == 0
         assert service.next_id == 1
 
+    def test_duplicate_detection_add_comic(self, service):
+        """Test duplicate detection when adding a single comic"""
+        # Add first comic
+        service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        
+        # Try to add duplicate (same title and volume)
+        with pytest.raises(ValueError, match="A comic with title 'Batman' and volume '1' already exists!"):
+            service.add_comic("Batman", "1", "Different Writer", "Different Artist")
+        
+        # Should still have only one comic
+        assert len(service.comics) == 1
+    
+    def test_duplicate_detection_case_insensitive(self, service):
+        """Test that duplicate detection is case insensitive"""
+        service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        
+        # Try to add with different case
+        with pytest.raises(ValueError, match="A comic with title 'BATMAN' and volume '1' already exists!"):
+            service.add_comic("BATMAN", "1", "Different Writer", "Different Artist")
+        
+        with pytest.raises(ValueError, match="A comic with title 'batman' and volume '1' already exists!"):
+            service.add_comic("batman", "1", "Different Writer", "Different Artist")
+    
+    def test_duplicate_detection_different_volume_allowed(self, service):
+        """Test that same title with different volume is allowed"""
+        service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        service.add_comic("Batman", "2", "Different Writer", "Different Artist")
+        
+        assert len(service.comics) == 2
+        assert service.comics[0].volume == "1"
+        assert service.comics[1].volume == "2"
+    
+    def test_duplicate_detection_different_title_allowed(self, service):
+        """Test that different title with same volume is allowed"""
+        service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        service.add_comic("Superman", "1", "Jerry Siegel", "Joe Shuster")
+        
+        assert len(service.comics) == 2
+        assert service.comics[0].title == "Batman"
+        assert service.comics[1].title == "Superman"
+    
+    def test_duplicate_detection_add_multiple_comics(self, service):
+        """Test duplicate detection when adding multiple comics"""
+        # Add first comic
+        service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        
+        comics_data = [
+            {'title': 'Superman', 'volume': '1', 'writer': 'Jerry Siegel', 'artist': 'Joe Shuster'},
+            {'title': 'Batman', 'volume': '1', 'writer': 'Different Writer', 'artist': 'Different Artist'},  # Duplicate
+            {'title': 'Wonder Woman', 'volume': '1', 'writer': 'William Marston', 'artist': 'Harry Peter'}
+        ]
+        
+        with pytest.raises(ValueError, match="Duplicate comics found: Batman \\(Volume 1\\)"):
+            service.add_multiple_comics(comics_data)
+        
+        # Should have only the original Batman (no new comics added due to duplicate)
+        assert len(service.comics) == 1  # Only original Batman
+    
+    def test_duplicate_detection_update_comic(self, service):
+        """Test duplicate detection when updating a comic"""
+        comic1 = service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        comic2 = service.add_comic("Superman", "1", "Jerry Siegel", "Joe Shuster")
+        
+        # Try to update Superman to have same title/volume as Batman
+        with pytest.raises(ValueError, match="A comic with title 'Batman' and volume '1' already exists!"):
+            service.update_comic(comic2.id, title="Batman", volume="1")
+        
+        # Comic should remain unchanged
+        updated_comic = service.get_comic_by_id(comic2.id)
+        assert updated_comic.title == "Superman"
+        assert updated_comic.volume == "1"
+    
+    def test_duplicate_detection_update_same_comic(self, service):
+        """Test that updating a comic to its own values is allowed"""
+        comic = service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        
+        # Should be able to update other fields without changing title/volume
+        updated = service.update_comic(comic.id, writer="Updated Writer", artist="Updated Artist")
+        
+        assert updated is not None
+        assert updated.title == "Batman"
+        assert updated.volume == "1"
+        assert updated.writer == "Updated Writer"
+        assert updated.artist == "Updated Artist"
+    
+    def test_auto_export_csv_on_add(self, service, temp_files):
+        """Test that CSV is automatically exported when adding a comic"""
+        csv_file, json_file = temp_files
+        
+        # Add a comic
+        service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        
+        # CSV should be automatically created/updated
+        assert os.path.exists(csv_file)
+        
+        # Verify CSV content
+        df = pd.read_csv(csv_file)
+        assert len(df) == 1
+        assert df.iloc[0]['Title'] == "Batman"
+    
+    def test_auto_export_csv_on_update(self, service, temp_files):
+        """Test that CSV is automatically exported when updating a comic"""
+        csv_file, json_file = temp_files
+        
+        comic = service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        service.update_comic(comic.id, title="Updated Batman")
+        
+        # Verify CSV was updated
+        df = pd.read_csv(csv_file)
+        assert len(df) == 1
+        assert df.iloc[0]['Title'] == "Updated Batman"
+    
+    def test_auto_export_csv_on_delete(self, service, temp_files):
+        """Test that CSV is automatically exported when deleting a comic"""
+        csv_file, json_file = temp_files
+        
+        comic1 = service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        comic2 = service.add_comic("Superman", "1", "Jerry Siegel", "Joe Shuster")
+        
+        # Delete one comic
+        service.delete_comic(comic1.id)
+        
+        # Verify CSV was updated
+        df = pd.read_csv(csv_file)
+        assert len(df) == 1
+        assert df.iloc[0]['Title'] == "Superman"
+
 if __name__ == "__main__":
     pytest.main([__file__])
