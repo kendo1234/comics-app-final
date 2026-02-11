@@ -25,10 +25,6 @@ MANIFEST
 *.manifest
 *.spec
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
 # Unit test / coverage reports
 htmlcov/
 .tox/
@@ -42,44 +38,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
-
 # Environments
 .env
 .venv
@@ -88,21 +46,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
 
 # IDE
 .vscode/
@@ -121,8 +64,15 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# Application specific
+# Application specific - runtime data
 comics_data.json
-*.xlsx
-BULK_ADD_FEATURE.md
-CONVERSION_SUMMARY.md
+
+# Documentation files (keep in repo for reference)
+# BULK_ADD_FEATURE.md
+# CONVERSION_SUMMARY.md
+# GITHUB_SETUP.md
+
+# Temporary files
+*.tmp
+*.bak
+push_commands.sh
