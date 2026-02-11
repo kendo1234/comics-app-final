@@ -395,5 +395,163 @@ class TestComicService:
         assert len(df) == 1
         assert df.iloc[0]['Title'] == "Superman"
 
+    def test_sorting_by_title(self, service):
+        """Test sorting comics by title"""
+        service.add_comic("Wonder Woman", "1", "William Marston", "Harry Peter")
+        service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        service.add_comic("Superman", "1", "Jerry Siegel", "Joe Shuster")
+        
+        comics = service.get_all_comics()
+        
+        # Sort by title ascending
+        sorted_asc = sorted(comics, key=lambda x: x.title.lower())
+        assert sorted_asc[0].title == "Batman"
+        assert sorted_asc[1].title == "Superman"
+        assert sorted_asc[2].title == "Wonder Woman"
+        
+        # Sort by title descending
+        sorted_desc = sorted(comics, key=lambda x: x.title.lower(), reverse=True)
+        assert sorted_desc[0].title == "Wonder Woman"
+        assert sorted_desc[1].title == "Superman"
+        assert sorted_desc[2].title == "Batman"
+    
+    def test_sorting_by_writer(self, service):
+        """Test sorting comics by writer"""
+        service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        service.add_comic("X-Men", "1", "Stan Lee", "Jack Kirby")
+        service.add_comic("Superman", "1", "Jerry Siegel", "Joe Shuster")
+        
+        comics = service.get_all_comics()
+        
+        # Sort by writer ascending
+        sorted_asc = sorted(comics, key=lambda x: x.writer.lower())
+        assert sorted_asc[0].writer == "Bob Kane"
+        assert sorted_asc[1].writer == "Jerry Siegel"
+        assert sorted_asc[2].writer == "Stan Lee"
+        
+        # Sort by writer descending
+        sorted_desc = sorted(comics, key=lambda x: x.writer.lower(), reverse=True)
+        assert sorted_desc[0].writer == "Stan Lee"
+        assert sorted_desc[1].writer == "Jerry Siegel"
+        assert sorted_desc[2].writer == "Bob Kane"
+    
+    def test_sorting_by_artist(self, service):
+        """Test sorting comics by artist"""
+        service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        service.add_comic("X-Men", "1", "Stan Lee", "Jack Kirby")
+        service.add_comic("Superman", "1", "Jerry Siegel", "Joe Shuster")
+        
+        comics = service.get_all_comics()
+        
+        # Sort by artist ascending
+        sorted_asc = sorted(comics, key=lambda x: x.artist.lower())
+        assert sorted_asc[0].artist == "Bob Kane"
+        assert sorted_asc[1].artist == "Jack Kirby"
+        assert sorted_asc[2].artist == "Joe Shuster"
+        
+        # Sort by artist descending
+        sorted_desc = sorted(comics, key=lambda x: x.artist.lower(), reverse=True)
+        assert sorted_desc[0].artist == "Joe Shuster"
+        assert sorted_desc[1].artist == "Jack Kirby"
+        assert sorted_desc[2].artist == "Bob Kane"
+    
+    def test_sorting_by_volume(self, service):
+        """Test sorting comics by volume"""
+        service.add_comic("Batman", "3", "Bob Kane", "Bob Kane")
+        service.add_comic("Batman", "1", "Bob Kane", "Bob Kane")
+        service.add_comic("Batman", "2", "Bob Kane", "Bob Kane")
+        
+        comics = service.get_all_comics()
+        
+        # Sort by volume ascending
+        sorted_asc = sorted(comics, key=lambda x: int(x.volume) if x.volume.isdigit() else 0)
+        assert sorted_asc[0].volume == "1"
+        assert sorted_asc[1].volume == "2"
+        assert sorted_asc[2].volume == "3"
+        
+        # Sort by volume descending
+        sorted_desc = sorted(comics, key=lambda x: int(x.volume) if x.volume.isdigit() else 0, reverse=True)
+        assert sorted_desc[0].volume == "3"
+        assert sorted_desc[1].volume == "2"
+        assert sorted_desc[2].volume == "1"
+    
+    def test_sorting_case_insensitive(self, service):
+        """Test that sorting is case insensitive"""
+        service.add_comic("batman", "1", "bob kane", "bob kane")
+        service.add_comic("SUPERMAN", "1", "JERRY SIEGEL", "JOE SHUSTER")
+        service.add_comic("Wonder Woman", "1", "William Marston", "Harry Peter")
+        
+        comics = service.get_all_comics()
+        
+        # Sort by title - should be case insensitive
+        sorted_by_title = sorted(comics, key=lambda x: x.title.lower())
+        assert sorted_by_title[0].title == "batman"
+        assert sorted_by_title[1].title == "SUPERMAN"
+        assert sorted_by_title[2].title == "Wonder Woman"
+        
+        # Sort by writer - should be case insensitive
+        sorted_by_writer = sorted(comics, key=lambda x: x.writer.lower())
+        assert sorted_by_writer[0].writer == "bob kane"
+        assert sorted_by_writer[1].writer == "JERRY SIEGEL"
+        assert sorted_by_writer[2].writer == "William Marston"
+
+if __name__ == "__main__":
+    pytest.main([__file__])
+    def test_pagination_logic(self, service):
+        """Test pagination calculations"""
+        # Add 75 comics to test pagination (should create 2 pages with 50 per page)
+        for i in range(75):
+            service.add_comic(f"Comic {i+1:02d}", "1", f"Writer {i+1}", f"Artist {i+1}")
+        
+        comics = service.get_all_comics()
+        per_page = 50
+        
+        # Test page 1
+        page = 1
+        total_comics = len(comics)
+        total_pages = (total_comics + per_page - 1) // per_page
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        page1_comics = comics[start_idx:end_idx]
+        
+        assert total_pages == 2  # 75 comics should create 2 pages
+        assert len(page1_comics) == 50  # First page should have 50 comics
+        assert page1_comics[0].title == "Comic 01"
+        assert page1_comics[-1].title == "Comic 50"
+        
+        # Test page 2
+        page = 2
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        page2_comics = comics[start_idx:end_idx]
+        
+        assert len(page2_comics) == 25  # Second page should have remaining 25 comics
+        assert page2_comics[0].title == "Comic 51"
+        assert page2_comics[-1].title == "Comic 75"
+    
+    def test_pagination_with_sorting(self, service):
+        """Test that pagination works correctly with sorting"""
+        # Add comics with different titles for sorting
+        service.add_comic("Zebra Comic", "1", "Writer A", "Artist A")
+        service.add_comic("Alpha Comic", "1", "Writer B", "Artist B")
+        service.add_comic("Beta Comic", "1", "Writer C", "Artist C")
+        
+        comics = service.get_all_comics()
+        
+        # Sort by title ascending
+        sorted_comics = sorted(comics, key=lambda x: x.title.lower())
+        
+        assert sorted_comics[0].title == "Alpha Comic"
+        assert sorted_comics[1].title == "Beta Comic"
+        assert sorted_comics[2].title == "Zebra Comic"
+        
+        # Sort by title descending
+        sorted_comics_desc = sorted(comics, key=lambda x: x.title.lower(), reverse=True)
+        
+        assert sorted_comics_desc[0].title == "Zebra Comic"
+        assert sorted_comics_desc[1].title == "Beta Comic"
+        assert sorted_comics_desc[2].title == "Alpha Comic"
+        assert sorted_comics_desc[2].title == "Alpha Comic"
+
 if __name__ == "__main__":
     pytest.main([__file__])
