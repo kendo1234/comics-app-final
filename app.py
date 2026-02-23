@@ -11,8 +11,48 @@ comic_service = ComicService()
 @app.route('/')
 def index():
     """Main page showing all comics"""
+    sort_by = request.args.get('sort', 'title')  # Default sort by title
+    sort_order = request.args.get('order', 'asc')  # Default ascending order
+    page = int(request.args.get('page', 1))  # Default to page 1
+    per_page = 50  # Comics per page
+    
     comics = comic_service.get_all_comics()
-    return render_template('index.html', comics=comics)
+    
+    # Sort comics based on the selected field
+    if sort_by == 'title':
+        comics.sort(key=lambda x: x.title.lower(), reverse=(sort_order == 'desc'))
+    elif sort_by == 'writer':
+        comics.sort(key=lambda x: x.writer.lower(), reverse=(sort_order == 'desc'))
+    elif sort_by == 'artist':
+        comics.sort(key=lambda x: x.artist.lower(), reverse=(sort_order == 'desc'))
+    elif sort_by == 'volume':
+        comics.sort(key=lambda x: int(x.volume) if x.volume.isdigit() else 0, reverse=(sort_order == 'desc'))
+    
+    # Calculate pagination
+    total_comics = len(comics)
+    total_pages = (total_comics + per_page - 1) // per_page  # Ceiling division
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    paginated_comics = comics[start_idx:end_idx]
+    
+    # Calculate pagination info
+    has_prev = page > 1
+    has_next = page < total_pages
+    prev_page = page - 1 if has_prev else None
+    next_page = page + 1 if has_next else None
+    
+    return render_template('index.html', 
+                         comics=paginated_comics,
+                         sort_by=sort_by, 
+                         sort_order=sort_order,
+                         page=page,
+                         total_pages=total_pages,
+                         total_comics=total_comics,
+                         has_prev=has_prev,
+                         has_next=has_next,
+                         prev_page=prev_page,
+                         next_page=next_page,
+                         per_page=per_page)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_comic():
@@ -136,9 +176,50 @@ def delete_comic(comic_id):
 def search():
     """Search comics"""
     query = request.args.get('q', '').strip()
+    sort_by = request.args.get('sort', 'title')  # Default sort by title
+    sort_order = request.args.get('order', 'asc')  # Default ascending order
+    page = int(request.args.get('page', 1))  # Default to page 1
+    per_page = 50  # Comics per page
+    
     if query:
         comics = comic_service.search_comics(query)
-        return render_template('index.html', comics=comics, search_query=query)
+        
+        # Sort search results based on the selected field
+        if sort_by == 'title':
+            comics.sort(key=lambda x: x.title.lower(), reverse=(sort_order == 'desc'))
+        elif sort_by == 'writer':
+            comics.sort(key=lambda x: x.writer.lower(), reverse=(sort_order == 'desc'))
+        elif sort_by == 'artist':
+            comics.sort(key=lambda x: x.artist.lower(), reverse=(sort_order == 'desc'))
+        elif sort_by == 'volume':
+            comics.sort(key=lambda x: int(x.volume) if x.volume.isdigit() else 0, reverse=(sort_order == 'desc'))
+        
+        # Calculate pagination
+        total_comics = len(comics)
+        total_pages = (total_comics + per_page - 1) // per_page  # Ceiling division
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        paginated_comics = comics[start_idx:end_idx]
+        
+        # Calculate pagination info
+        has_prev = page > 1
+        has_next = page < total_pages
+        prev_page = page - 1 if has_prev else None
+        next_page = page + 1 if has_next else None
+        
+        return render_template('index.html', 
+                             comics=paginated_comics,
+                             search_query=query, 
+                             sort_by=sort_by, 
+                             sort_order=sort_order,
+                             page=page,
+                             total_pages=total_pages,
+                             total_comics=total_comics,
+                             has_prev=has_prev,
+                             has_next=has_next,
+                             prev_page=prev_page,
+                             next_page=next_page,
+                             per_page=per_page)
     else:
         return redirect(url_for('index'))
 
