@@ -18,7 +18,7 @@
     <div style="align-self: end">
       <button type="submit" class="btn">Search</button>
       {% if search_query %}
-      <a href="{{ url_for('index') }}" class="btn" style="background: #95a5a6"
+      <a href="{{ url_for('index') }}" class="btn btn-neutral"
         >Clear</a
       >
       {% endif %}
@@ -50,7 +50,6 @@
                       order='desc' if current_sort == 'title' and current_order == 'asc' else 'asc',
                       page=1) }}"
     class="btn {{ 'btn-active' if current_sort == 'title' else '' }}"
-    style="background: {{ '#2980b9' if current_sort == 'title' else '#3498db' }};"
   >
     Title {% if current_sort == 'title' %} {{ '↓' if current_order == 'desc'
     else '↑' }} {% endif %}
@@ -64,7 +63,6 @@
                       order='desc' if current_sort == 'writer' and current_order == 'asc' else 'asc',
                       page=1) }}"
     class="btn {{ 'btn-active' if current_sort == 'writer' else '' }}"
-    style="background: {{ '#2980b9' if current_sort == 'writer' else '#3498db' }};"
   >
     Writer {% if current_sort == 'writer' %} {{ '↓' if current_order == 'desc'
     else '↑' }} {% endif %}
@@ -78,7 +76,6 @@
                       order='desc' if current_sort == 'artist' and current_order == 'asc' else 'asc',
                       page=1) }}"
     class="btn {{ 'btn-active' if current_sort == 'artist' else '' }}"
-    style="background: {{ '#2980b9' if current_sort == 'artist' else '#3498db' }};"
   >
     Artist {% if current_sort == 'artist' %} {{ '↓' if current_order == 'desc'
     else '↑' }} {% endif %}
@@ -92,7 +89,6 @@
                       order='desc' if current_sort == 'volume' and current_order == 'asc' else 'asc',
                       page=1) }}"
     class="btn {{ 'btn-active' if current_sort == 'volume' else '' }}"
-    style="background: {{ '#2980b9' if current_sort == 'volume' else '#3498db' }};"
   >
     Volume {% if current_sort == 'volume' %} {{ '↓' if current_order == 'desc'
     else '↑' }} {% endif %}
@@ -103,8 +99,8 @@
     href="{{ url_for('index' if not search_query else 'search', 
                       q=search_query if search_query else none,
                       page=1) }}"
-    class="btn"
-    style="background: #95a5a6; margin-left: 0.5rem"
+    class="btn btn-neutral"
+    style="margin-left: 0.5rem"
   >
     Clear Sort
   </a>
@@ -118,7 +114,7 @@
 
 <!-- Pagination Info -->
 {% if total_pages > 1 %}
-<div style="margin: 1rem 0; text-align: center; color: #666">
+<div class="text-muted" style="margin: 1rem 0; text-align: center">
   Showing {{ ((page - 1) * per_page + 1) }} - {{ (page * per_page if page *
   per_page < total_comics else total_comics) }} of {{ total_comics }} comics
   (Page {{ page }} of {{ total_pages }})
@@ -188,15 +184,11 @@
                         order=sort_order if sort_order else none,
                         page=prev_page) }}"
     class="btn"
-    style="background: #3498db"
   >
     ← Previous
   </a>
   {% else %}
-  <span
-    class="btn"
-    style="background: #bdc3c7; color: #7f8c8d; cursor: not-allowed"
-  >
+  <span class="btn btn-disabled">
     ← Previous
   </span>
   {% endif %}
@@ -211,14 +203,14 @@
                         order=sort_order if sort_order else none,
                         page=1) }}"
     class="btn"
-    style="background: #3498db; margin: 0 0.25rem"
+    style="margin: 0 0.25rem"
     >1</a
   >
   {% if start_page > 2 %}
   <span style="margin: 0 0.5rem">...</span>
   {% endif %} {% endif %} {% for page_num in range(start_page, end_page + 1) %}
   {% if page_num == page %}
-  <span class="btn" style="background: #2980b9; margin: 0 0.25rem"
+  <span class="btn btn-active" style="margin: 0 0.25rem"
     >{{ page_num }}</span
   >
   {% else %}
@@ -229,7 +221,7 @@
                           order=sort_order if sort_order else none,
                           page=page_num) }}"
     class="btn"
-    style="background: #3498db; margin: 0 0.25rem"
+    style="margin: 0 0.25rem"
     >{{ page_num }}</a
   >
   {% endif %} {% endfor %} {% if end_page < total_pages %} {% if end_page <
@@ -243,7 +235,7 @@
                         order=sort_order if sort_order else none,
                         page=total_pages) }}"
     class="btn"
-    style="background: #3498db; margin: 0 0.25rem"
+    style="margin: 0 0.25rem"
     >{{ total_pages }}</a
   >
   {% endif %}
@@ -257,15 +249,11 @@
                         order=sort_order if sort_order else none,
                         page=next_page) }}"
     class="btn"
-    style="background: #3498db"
   >
     Next →
   </a>
   {% else %}
-  <span
-    class="btn"
-    style="background: #bdc3c7; color: #7f8c8d; cursor: not-allowed"
-  >
+  <span class="btn btn-disabled">
     Next →
   </span>
   {% endif %}
@@ -276,8 +264,7 @@
   <a href="{{ url_for('add_comic') }}" class="btn btn-success">Add New Comic</a>
   <a
     href="{{ url_for('add_multiple_comics') }}"
-    class="btn"
-    style="background: #27ae60"
+    class="btn btn-success"
     >Add Multiple Comics</a
   >
 </div>

@@ -4,7 +4,73 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}Comic Collection Manager{% endblock %}</title>
+    <script>
+      (function () {
+        const storedTheme = localStorage.getItem("theme");
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
+        const theme = storedTheme || (prefersDark ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
     <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f4f4;
+        --text: #333;
+        --muted-text: #666;
+        --surface: #fff;
+        --surface-2: #f8f9fa;
+        --border: #ddd;
+        --header-bg: #2c3e50;
+        --nav-bg: #34495e;
+        --nav-hover: #2c3e50;
+        --table-header: #34495e;
+        --shadow: rgba(0, 0, 0, 0.1);
+        --btn: #3498db;
+        --btn-hover: #2980b9;
+        --btn-danger: #e74c3c;
+        --btn-danger-hover: #c0392b;
+        --btn-success: #27ae60;
+        --btn-success-hover: #229954;
+        --btn-neutral: #95a5a6;
+        --btn-neutral-hover: #7f8c8d;
+        --btn-warning: #e67e22;
+        --btn-warning-hover: #d35400;
+        --btn-disabled: #bdc3c7;
+        --btn-disabled-text: #7f8c8d;
+        --link: #3498db;
+      }
+
+      [data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #0e141b;
+        --text: #dce3eb;
+        --muted-text: #9ba7b4;
+        --surface: #151f2b;
+        --surface-2: #101926;
+        --border: #2d3a48;
+        --header-bg: #0f1a27;
+        --nav-bg: #142233;
+        --nav-hover: #1f3145;
+        --table-header: #1b2b3f;
+        --shadow: rgba(0, 0, 0, 0.35);
+        --btn: #2f89c9;
+        --btn-hover: #256f9f;
+        --btn-danger: #c64f4f;
+        --btn-danger-hover: #a74141;
+        --btn-success: #2c9b64;
+        --btn-success-hover: #247e52;
+        --btn-neutral: #5e6f83;
+        --btn-neutral-hover: #4d5c6d;
+        --btn-warning: #b87833;
+        --btn-warning-hover: #97622a;
+        --btn-disabled: #3a4a5d;
+        --btn-disabled-text: #9fb1c4;
+        --link: #74b7e2;
+      }
+
       * {
         margin: 0;
         padding: 0;
@@ -14,8 +80,8 @@
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         line-height: 1.6;
-        color: #333;
-        background-color: #f4f4f4;
+        color: var(--text);
+        background-color: var(--bg);
       }
 
       .container {
@@ -25,7 +91,7 @@
       }
 
       header {
-        background: #2c3e50;
+        background: var(--header-bg);
         color: white;
         padding: 1rem 0;
         margin-bottom: 2rem;
@@ -36,7 +102,7 @@
       }
 
       nav {
-        background: #34495e;
+        background: var(--nav-bg);
         padding: 1rem 0;
         margin-bottom: 2rem;
       }
@@ -44,12 +110,17 @@
       nav ul {
         list-style: none;
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;
+        align-items: center;
         flex-wrap: wrap;
       }
 
       nav li {
         margin: 0 1rem;
+      }
+
+      nav li.theme-toggle-item {
+        margin-left: auto;
       }
 
       nav a {
@@ -61,13 +132,13 @@
       }
 
       nav a:hover {
-        background-color: #2c3e50;
+        background-color: var(--nav-hover);
       }
 
       .btn {
         display: inline-block;
         padding: 0.5rem 1rem;
-        background: #3498db;
+        background: var(--btn);
         color: white;
         text-decoration: none;
         border-radius: 4px;
@@ -77,23 +148,49 @@
       }
 
       .btn:hover {
-        background: #2980b9;
+        background: var(--btn-hover);
       }
 
       .btn-danger {
-        background: #e74c3c;
+        background: var(--btn-danger);
       }
 
       .btn-danger:hover {
-        background: #c0392b;
+        background: var(--btn-danger-hover);
       }
 
       .btn-success {
-        background: #27ae60;
+        background: var(--btn-success);
       }
 
       .btn-success:hover {
-        background: #229954;
+        background: var(--btn-success-hover);
+      }
+
+      .btn-neutral {
+        background: var(--btn-neutral);
+      }
+
+      .btn-neutral:hover {
+        background: var(--btn-neutral-hover);
+      }
+
+      .btn-warning {
+        background: var(--btn-warning);
+      }
+
+      .btn-warning:hover {
+        background: var(--btn-warning-hover);
+      }
+
+      .btn-disabled {
+        background: var(--btn-disabled);
+        color: var(--btn-disabled-text);
+        cursor: not-allowed;
+      }
+
+      .btn-active {
+        background: var(--btn-hover);
       }
 
       .form-group {
@@ -110,9 +207,11 @@
       input[type="search"] {
         width: 100%;
         padding: 0.5rem;
-        border: 1px solid #ddd;
+        border: 1px solid var(--border);
         border-radius: 4px;
         font-size: 1rem;
+        color: var(--text);
+        background: var(--surface);
       }
 
       .search-form {
@@ -148,27 +247,27 @@
       table {
         width: 100%;
         border-collapse: collapse;
-        background: white;
+        background: var(--surface);
         border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 10px var(--shadow);
       }
 
       th,
       td {
         padding: 1rem;
         text-align: left;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 1px solid var(--border);
       }
 
       th {
-        background: #34495e;
+        background: var(--table-header);
         color: white;
         font-weight: bold;
       }
 
       tr:hover {
-        background: #f8f9fa;
+        background: var(--surface-2);
       }
 
       .actions {
@@ -177,10 +276,10 @@
       }
 
       .sorting-controls {
-        background: white;
+        background: var(--surface);
         padding: 1rem;
         border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 10px var(--shadow);
         margin-bottom: 1rem;
       }
 
@@ -204,10 +303,22 @@
       }
 
       .card {
-        background: white;
+        background: var(--surface);
         padding: 2rem;
         border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 10px var(--shadow);
+      }
+
+      .text-muted {
+        color: var(--muted-text);
+      }
+
+      .theme-toggle {
+        font-size: 0.9rem;
+      }
+
+      a {
+        color: var(--link);
       }
 
       @media (max-width: 768px) {
@@ -222,6 +333,10 @@
 
         nav li {
           margin: 0.25rem 0;
+        }
+
+        nav li.theme-toggle-item {
+          margin-left: 0;
         }
 
         .search-form {
@@ -278,6 +393,11 @@
           <li>
             <a href="{{ url_for('add_multiple_comics') }}">Add Multiple</a>
           </li>
+          <li class="theme-toggle-item">
+            <button id="themeToggle" class="btn btn-neutral theme-toggle" type="button">
+              Toggle Dark Mode
+            </button>
+          </li>
         </ul>
       </div>
     </nav>
@@ -292,5 +412,26 @@
       </div>
       {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
     </div>
+    <script>
+      (function () {
+        const toggle = document.getElementById("themeToggle");
+        const root = document.documentElement;
+        const getTheme = () => root.getAttribute("data-theme") || "light";
+        const setToggleText = () => {
+          toggle.textContent =
+            getTheme() === "dark" ? "Light Mode" : "Dark Mode";
+        };
+
+        if (toggle) {
+          setToggleText();
+          toggle.addEventListener("click", function () {
+            const nextTheme = getTheme() === "dark" ? "light" : "dark";
+            root.setAttribute("data-theme", nextTheme);
+            localStorage.setItem("theme", nextTheme);
+            setToggleText();
+          });
+        }
+      })();
+    </script>
   </body>
 </html>
