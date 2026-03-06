@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Comic Collection Manager{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 520px; margin: 0 auto">
+  <h2 style="margin-bottom: 1rem">Sign in required</h2>
+  <p class="text-muted" style="margin-bottom: 1.5rem">
+    Access to Comic Collection Manager is restricted. Sign in with your Cognito
+    user account.
+  </p>
+
+  <a class="btn btn-success" href="{{ url_for('login', next=request.args.get('next', '')) }}"
+    >Sign In</a
+  >
+</div>
+{% endblock %}

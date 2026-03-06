@@ -3,6 +3,17 @@ import os
 from typing import List, Dict, Optional
 from dataclasses import dataclass, asdict
 import json
+try:
+    import boto3
+    from botocore.exceptions import BotoCoreError, ClientError
+except ImportError:
+    boto3 = None
+
+    class BotoCoreError(Exception):
+        pass
+
+    class ClientError(Exception):
+        pass
 
 @dataclass
 class Comic:
@@ -16,12 +27,42 @@ class ComicService:
     def __init__(self, csv_file: str = "Comics.csv", json_file: str = "comics_data.json"):
         self.csv_file = csv_file
         self.json_file = json_file
+        self.storage_backend = os.getenv("COMICS_STORAGE_BACKEND", "file").strip().lower()
+        self.dynamodb_table_name = os.getenv("DYNAMODB_TABLE_NAME", "comics")
+        self.dynamodb_region = os.getenv("AWS_REGION", "us-east-1")
+        self.dynamodb_table = None
         self.comics = []
         self.next_id = 1
+        self._configure_storage_backend()
         self.load_data()
+
+    def _configure_storage_backend(self):
+        """Configure storage backend based on environment."""
+        if self.storage_backend != "dynamodb":
+            self.storage_backend = "file"
+            return
+
+        if boto3 is None:
+            print("boto3 not installed, falling back to file storage")
+            self.storage_backend = "file"
+            return
+
+        try:
+            resource = boto3.resource("dynamodb", region_name=self.dynamodb_region)
+            self.dynamodb_table = resource.Table(self.dynamodb_table_name)
+            # Lightweight call to verify the table is reachable/configured.
+            self.dynamodb_table.load()
+        except (BotoCoreError, ClientError) as e:
+            print(f"Error configuring DynamoDB, falling back to file storage: {e}")
+            self.storage_backend = "file"
+            self.dynamodb_table = None
     
     def load_data(self):
         """Load comics from CSV file and JSON storage"""
+        if self.storage_backend == "dynamodb":
+            self._load_data_from_dynamodb()
+            return
+
         # Load from CSV if exists
         if os.path.exists(self.csv_file):
             try:
@@ -53,9 +94,44 @@ class ComicService:
                             self.comics.append(comic)
             except Exception as e:
                 print(f"Error loading JSON file: {e}")
+
+    def _load_data_from_dynamodb(self):
+        """Load comics from DynamoDB table."""
+        self.comics = []
+        self.next_id = 1
+
+        if not self.dynamodb_table:
+            return
+
+        try:
+            response = self.dynamodb_table.scan()
+            items = response.get("Items", [])
+            while "LastEvaluatedKey" in response:
+                response = self.dynamodb_table.scan(
+                    ExclusiveStartKey=response["LastEvaluatedKey"]
+                )
+                items.extend(response.get("Items", []))
+
+            for item in items:
+                comic = Comic(
+                    id=int(item["id"]),
+                    title=str(item["title"]),
+                    volume=str(item["volume"]),
+                    writer=str(item["writer"]),
+                    artist=str(item["artist"]),
+                )
+                self.comics.append(comic)
+
+            self.comics.sort(key=lambda c: c.id or 0)
+            if self.comics:
+                self.next_id = max(c.id or 0 for c in self.comics) + 1
+        except (BotoCoreError, ClientError) as e:
+            print(f"Error loading DynamoDB data: {e}")
     
     def save_to_json(self):
         """Save all comics to JSON file"""
+        if self.storage_backend == "dynamodb":
+            return
         try:
             with open(self.json_file, 'w') as f:
                 json.dump([asdict(comic) for comic in self.comics], f, indent=2)
@@ -64,6 +140,8 @@ class ComicService:
     
     def save_to_csv(self):
         """Save all comics to CSV file"""
+        if self.storage_backend == "dynamodb":
+            return
         try:
             df = pd.DataFrame([{
                 'Title': comic.title,
@@ -74,6 +152,32 @@ class ComicService:
             df.to_csv(self.csv_file, index=False)
         except Exception as e:
             print(f"Error saving to CSV: {e}")
+
+    def _save_comic_to_dynamodb(self, comic: Comic):
+        if self.storage_backend != "dynamodb" or not self.dynamodb_table:
+            return
+
+        try:
+            self.dynamodb_table.put_item(
+                Item={
+                    "id": comic.id,
+                    "title": comic.title,
+                    "volume": comic.volume,
+                    "writer": comic.writer,
+                    "artist": comic.artist,
+                }
+            )
+        except (BotoCoreError, ClientError) as e:
+            raise RuntimeError(f"Failed to save comic to DynamoDB: {e}") from e
+
+    def _delete_comic_from_dynamodb(self, comic_id: int):
+        if self.storage_backend != "dynamodb" or not self.dynamodb_table:
+            return
+
+        try:
+            self.dynamodb_table.delete_item(Key={"id": comic_id})
+        except (BotoCoreError, ClientError) as e:
+            raise RuntimeError(f"Failed to delete comic from DynamoDB: {e}") from e
     
     def check_duplicate(self, title: str, volume: str, exclude_id: int = None) -> bool:
         """Check if a comic with the same title and volume already exists"""
@@ -99,8 +203,11 @@ class ComicService:
         )
         self.comics.append(comic)
         self.next_id += 1
-        self.save_to_json()
-        self.save_to_csv()  # Auto-export to CSV
+        if self.storage_backend == "dynamodb":
+            self._save_comic_to_dynamodb(comic)
+        else:
+            self.save_to_json()
+            self.save_to_csv()  # Auto-export to CSV
         return comic
     
     def add_multiple_comics(self, comics_data: List[Dict[str, str]]) -> List[Comic]:
@@ -144,8 +251,12 @@ class ComicService:
             self.next_id += 1
         
         if added_comics:
-            self.save_to_json()
-            self.save_to_csv()  # Auto-export to CSV
+            if self.storage_backend == "dynamodb":
+                for comic in added_comics:
+                    self._save_comic_to_dynamodb(comic)
+            else:
+                self.save_to_json()
+                self.save_to_csv()  # Auto-export to CSV
         
         return added_comics
     
@@ -181,8 +292,11 @@ class ComicService:
                 comic.writer = writer
             if artist is not None:
                 comic.artist = artist
-            self.save_to_json()
-            self.save_to_csv()  # Auto-export to CSV
+            if self.storage_backend == "dynamodb":
+                self._save_comic_to_dynamodb(comic)
+            else:
+                self.save_to_json()
+                self.save_to_csv()  # Auto-export to CSV
             return comic
         return None
     
@@ -191,8 +305,11 @@ class ComicService:
         for i, comic in enumerate(self.comics):
             if comic.id == comic_id:
                 del self.comics[i]
-                self.save_to_json()
-                self.save_to_csv()  # Auto-export to CSV
+                if self.storage_backend == "dynamodb":
+                    self._delete_comic_from_dynamodb(comic_id)
+                else:
+                    self.save_to_json()
+                    self.save_to_csv()  # Auto-export to CSV
                 return True
         return False
     
@@ -209,6 +326,8 @@ class ComicService:
     
     def export_to_csv(self, filename: str = None):
         """Export all comics to CSV file"""
+        if self.storage_backend == "dynamodb":
+            raise RuntimeError("CSV export is unavailable when using DynamoDB backend")
         if filename is None:
             filename = self.csv_file
         self.save_to_csv()

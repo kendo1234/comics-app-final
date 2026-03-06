@@ -41,6 +41,13 @@ ComicsApp/
 
 3. **Verify your Comics.csv file is in the project directory**
 
+## AWS Access (Migration Prep)
+
+- This project will be migrated using a personal AWS account and an IAM user with least-privilege access to required services.
+- Configure local credentials in `~/.aws/credentials` before running AWS CLI or deployment tooling.
+- Never commit AWS secrets or credentials to this repository.
+- Full migration details are in `AWS_MIGRATION.md`.
+
 ## Usage
 
 ### Running the Web Application

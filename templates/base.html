@@ -393,6 +393,16 @@
           <li>
             <a href="{{ url_for('add_multiple_comics') }}">Add Multiple</a>
           </li>
+          {% if auth_required and is_authenticated %}
+          <li>
+            <a href="{{ url_for('logout') }}"
+              >Logout{% if current_user and current_user.name %}
+              ({{ current_user.name }}){% endif %}</a
+            >
+          </li>
+          {% elif auth_required %}
+          <li><a href="{{ url_for('login') }}">Login</a></li>
+          {% endif %}
           <li class="theme-toggle-item">
             <button id="themeToggle" class="btn btn-neutral theme-toggle" type="button">
               Toggle Dark Mode

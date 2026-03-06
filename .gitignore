@@ -76,3 +76,10 @@ comics_data.json
 *.tmp
 *.bak
 push_commands.sh
+
+# AWS credentials (local only)
+.aws/
+.aws/credentials
+aws-credentials
+scripts/aws/env.sh
+scripts/aws/.stack-outputs.env
